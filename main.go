@@ -6,6 +6,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"time"
 
 	httpadapter "ToDo-List/internal/adapters/http"
 	"ToDo-List/internal/adapters/repo"
@@ -19,16 +20,8 @@ func main() {
 		log.Fatal("DATABASE_URL environment variable is not set")
 	}
 
-	db, err := sql.Open("postgres", databaseURL)
-	if err != nil {
-		log.Fatalf("Failed to open DB connection: %v", err)
-	}
+	db := waitForDatabase(databaseURL)
 	defer db.Close()
-
-	err = db.Ping()
-	if err != nil {
-		log.Fatalf("Failed to ping DB: %v", err)
-	}
 
 	fmt.Println("Successfully connected to the database!")
 
@@ -38,16 +31,34 @@ func main() {
 	}
 
 	todoRepo := repo.NewPostgreRepo(db)
-
 	router := httpadapter.NewRouter(todoRepo)
 
-	http.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte("OK"))
-	})
-
 	fmt.Printf("Starting server at :%s...\n", port)
-	err = http.ListenAndServe(":"+port, router)
+	err := http.ListenAndServe(":"+port, router)
 	if err != nil {
 		log.Fatalf("Server failed: %v", err)
 	}
+}
+
+func waitForDatabase(databaseURL string) *sql.DB {
+	var db *sql.DB
+	var err error
+	for i := 0; i < 10; i++ {
+		db, err = sql.Open("postgres", databaseURL)
+		if err != nil {
+			log.Printf("Failed to connect to DB (attempt %d): %v", i+1, err)
+			time.Sleep(5 * time.Second)
+			continue
+		}
+		err = db.Ping()
+		if err != nil {
+			log.Printf("Failed to ping DB (attempt %d): %v", i+1, err)
+			time.Sleep(5 * time.Second)
+			continue
+		}
+		log.Println("Successfully connected to the database!")
+		return db
+	}
+	log.Fatalf("Could not connect to the database after multiple attempts: %v", err)
+	return nil
 }
