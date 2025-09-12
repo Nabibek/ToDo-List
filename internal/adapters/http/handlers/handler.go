@@ -8,8 +8,6 @@ import (
 
 	"ToDo-List/internal/core/domain"
 	"ToDo-List/internal/core/ports"
-
-	"github.com/google/uuid"
 )
 
 type TodoHandler struct {
@@ -35,8 +33,18 @@ func (h *TodoHandler) CreateTodoHandler(w http.ResponseWriter, r *http.Request) 
 		http.Error(w, "Invalid request body", http.StatusBadRequest)
 		return
 	}
-
-	todo.Id = uuid.NewString()
+	if todo.Todo == "" {
+		http.Error(w, "Missing 'todo' field", http.StatusBadRequest)
+		return
+	}
+	if todo.Message == "" {
+		http.Error(w, "Missing 'message' field", http.StatusBadRequest)
+		return
+	}
+	if todo.Deadline.IsZero() {
+		http.Error(w, "Missing or invalid 'deadline' field", http.StatusBadRequest)
+		return
+	}
 
 	createdTodo, err := h.todoService.CreateTodo(r.Context(), todo)
 	if err != nil {
@@ -205,4 +213,25 @@ func (h *TodoHandler) CompleteTodoByIdHandler(w http.ResponseWriter, r *http.Req
 		return
 	}
 	w.WriteHeader(http.StatusNoContent)
+}
+func (h *TodoHandler) GetTodosWithFilterHandler(w http.ResponseWriter, r *http.Request) {
+	log.Printf("Received %s %s", r.Method, r.URL.Path)
+	if r.Method != http.MethodGet {
+		http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
+		return
+	}
+	filters := make(map[string]string)
+	queryParams := r.URL.Query()
+	for key, values := range queryParams {
+		if len(values) > 0 {
+			filters[key] = strings.ToLower(values[0])
+		}
+	}
+	todos, err := h.todoService.GetTodosWithFilter(r.Context(), filters)
+	if err != nil {
+		http.Error(w, "Failed to get todos with filters", http.StatusInternalServerError)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(todos)
 }

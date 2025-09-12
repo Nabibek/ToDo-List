@@ -15,4 +15,5 @@ type ToDoService interface {
 	GetTodosByStatus(ctx context.Context, status string) ([]domain.ToDo, error)
 	CompleteTodoById(ctx context.Context, id string) error
 	GetTodoByPeriod(ctx context.Context, start string, end string) ([]domain.ToDo, error)
+	GetTodosWithFilter(ctx context.Context, filters map[string]string) ([]domain.ToDo, error)
 }

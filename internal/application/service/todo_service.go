@@ -52,3 +52,8 @@ func (s *TodoService) CompleteTodoById(ctx context.Context, id string) error {
 func (s *TodoService) GetTodoByPeriod(ctx context.Context, start string, end string) ([]domain.ToDo, error) {
 	return s.repo.GetTodoByPeriod(ctx, start, end)
 }
+
+func (s *TodoService) GetTodosWithFilter(ctx context.Context, filters map[string]string) ([]domain.ToDo, error) {
+
+	return s.repo.GetTodosWithFilter(ctx, filters)
+}

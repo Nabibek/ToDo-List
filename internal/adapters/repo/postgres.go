@@ -254,3 +254,74 @@ func (r *PostgreRepo) GetTodoByPeriod(ctx context.Context, start string, end str
 func (r *PostgreRepo) Ping() error {
 	return r.db.Ping()
 }
+func (r *PostgreRepo) GetTodosWithFilter(ctx context.Context, filters map[string]string) ([]domain.ToDo, error) {
+	query := `SELECT id, todo, message, created_at, updated_at, deadline, system_message, completed_at, complete FROM todo`
+
+	if status, ok := filters["status"]; ok {
+		if status == "complete" {
+			filters["complete"] = "true"
+		} else if status == "lose" {
+			filters["complete"] = "false"
+		}
+
+		delete(filters, "status")
+	}
+	if deadline, ok := filters["deadline"]; ok {
+		parsedTime, err := time.Parse("2006-01-02", deadline)
+		if err != nil {
+			return nil, fmt.Errorf("invalid deadline format, expected YYYY-MM-DD")
+		}
+		filters["deadline"] = parsedTime.Format("2006-01-02 15:04:05")
+		delete(filters, "deadline")
+	}
+	if createdAt, ok := filters["created_at"]; ok {
+		parsedTime, err := time.Parse("2006-01-02", createdAt)
+		if err != nil {
+			return nil, fmt.Errorf("invalid created_at format, expected YYYY-MM-DD")
+		}
+		filters["created_at"] = parsedTime.Format("2006-01-02 15:04:05")
+		delete(filters, "created_at")
+	}
+
+	if len(filters) > 0 {
+		query += " WHERE "
+		first := true
+		for key, value := range filters {
+			if !first {
+				query += " AND "
+			}
+			query += fmt.Sprintf("%s = '%s'", key, value)
+			first = false
+		}
+	}
+
+	rows, err := r.db.QueryContext(ctx, query)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var todos []domain.ToDo
+	for rows.Next() {
+		var todo domain.ToDo
+		err := rows.Scan(
+			&todo.Id,
+			&todo.Todo,
+			&todo.Message,
+			&todo.CreatedAt,
+			&todo.UpdatedAt,
+			&todo.Deadline,
+			&todo.SystemMessage,
+			&todo.CompletedAt,
+			&todo.Complete,
+		)
+		if err != nil {
+			return nil, err
+		}
+		todos = append(todos, todo)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return todos, nil
+
+}
