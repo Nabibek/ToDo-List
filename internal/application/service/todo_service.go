@@ -42,3 +42,13 @@ func (s *TodoService) UpdateTodo(ctx context.Context, todo domain.ToDo) error {
 func (s *TodoService) DeleteTodo(ctx context.Context, id string) error {
 	return s.repo.DeleteTodoById(ctx, id)
 }
+
+func (s *TodoService) GetTodosByStatus(ctx context.Context, status string) ([]domain.ToDo, error) {
+	return s.repo.GetTodosByStatus(ctx, status)
+}
+func (s *TodoService) CompleteTodoById(ctx context.Context, id string) error {
+	return s.repo.CompleteTodoById(ctx, id)
+}
+func (s *TodoService) GetTodoByPeriod(ctx context.Context, start string, end string) ([]domain.ToDo, error) {
+	return s.repo.GetTodoByPeriod(ctx, start, end)
+}

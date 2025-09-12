@@ -148,3 +148,61 @@ func (h *TodoHandler) DeleteTodoHandler(w http.ResponseWriter, r *http.Request) 
 
 	w.WriteHeader(http.StatusNoContent)
 }
+
+func (h *TodoHandler) GetTodosByStatusHandler(w http.ResponseWriter, r *http.Request) {
+	log.Printf("Received %s %s", r.Method, r.URL.Path)
+	if r.Method != http.MethodGet {
+		http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
+		return
+	}
+	status := r.URL.Query().Get("status")
+	if status == "" {
+		http.Error(w, "Missing status parameter", http.StatusBadRequest)
+		return
+	}
+	todos, err := h.todoService.GetTodosByStatus(r.Context(), status)
+	if err != nil {
+		http.Error(w, "Failed to get todos by status", http.StatusInternalServerError)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(todos)
+}
+func (h *TodoHandler) GetTodosByPeriodHandler(w http.ResponseWriter, r *http.Request) {
+	log.Printf("Received %s %s", r.Method, r.URL.Path)
+	if r.Method != http.MethodGet {
+		http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
+		return
+	}
+	start := r.URL.Query().Get("start")
+	end := r.URL.Query().Get("end")
+	if start == "" || end == "" {
+		http.Error(w, "Missing start or end parameter", http.StatusBadRequest)
+		return
+	}
+	todos, err := h.todoService.GetTodoByPeriod(r.Context(), start, end)
+	if err != nil {
+		http.Error(w, "Failed to get todos by period", http.StatusInternalServerError)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(todos)
+}
+func (h *TodoHandler) CompleteTodoByIdHandler(w http.ResponseWriter, r *http.Request) {
+	log.Printf("Received %s %s", r.Method, r.URL.Path)
+	if r.Method != http.MethodPost {
+		http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
+		return
+	}
+	id := strings.TrimPrefix(r.URL.Path, "/todo/complete/")
+	if id == "" {
+		http.Error(w, "Missing todo ID", http.StatusBadRequest)
+		return
+	}
+	err := h.todoService.CompleteTodoById(r.Context(), id)
+	if err != nil {
+		http.Error(w, "Failed to complete todo", http.StatusInternalServerError)
+		return
+	}
+	w.WriteHeader(http.StatusNoContent)
+}

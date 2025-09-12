@@ -6,33 +6,50 @@ import (
 	"ToDo-List/internal/adapters/http/handlers"
 	"ToDo-List/internal/application/service"
 	"ToDo-List/internal/core/ports"
+
+	"github.com/gorilla/mux"
 )
 
-func NewRouter(repo ports.PostgreRepo) *http.ServeMux {
-	mux := http.NewServeMux()
+func NewRouter(repo ports.PostgreRepo) *mux.Router {
+	router := mux.NewRouter()
 
 	todoService := service.NewToDoService(repo)
 	todoHandler := handlers.NewTodoHandler(todoService)
 
 	// POST /todo
-	mux.HandleFunc("/todo", todoHandler.CreateTodoHandler)
+	router.HandleFunc("/todo", todoHandler.CreateTodoHandler).Methods(http.MethodPost)
 
 	// GET /todos
-	mux.HandleFunc("/todos", todoHandler.GetTodosHandler)
+	router.HandleFunc("/todos", todoHandler.GetTodosHandler).Methods(http.MethodGet)
 
-	// GET /todo/{id}, PUT /todo/{id}, DELETE /todo/{id}
-	mux.HandleFunc("/todo/", func(w http.ResponseWriter, r *http.Request) {
-		switch r.Method {
-		case http.MethodGet:
-			todoHandler.GetTodoByIdHandler(w, r)
-		case http.MethodPut:
-			todoHandler.UpdateTodoByIdHandler(w, r)
-		case http.MethodDelete:
-			todoHandler.DeleteTodoHandler(w, r)
-		default:
-			http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
+	// Health check
+	router.HandleFunc("/health", healthHandler(repo)).Methods(http.MethodGet)
+	// GET /todos/status
+	router.HandleFunc("/todos/status", todoHandler.GetTodosByStatusHandler).Methods(http.MethodGet)
+
+	// GET /todos/period
+	router.HandleFunc("/todos/period", todoHandler.GetTodosByPeriodHandler).Methods(http.MethodGet)
+
+	// POST /todo/complete/{id}
+	router.HandleFunc("/todo/complete/{id}", todoHandler.CompleteTodoByIdHandler).Methods(http.MethodPost)
+
+	// GET /todo/{id}
+	router.HandleFunc("/todo/{id}", todoHandler.GetTodoByIdHandler).Methods(http.MethodGet)
+	// PUT /todo/{id}
+	router.HandleFunc("/todo/{id}", todoHandler.UpdateTodoByIdHandler).Methods(http.MethodPut)
+	// DELETE /todo/{id}
+	router.HandleFunc("/todo/{id}", todoHandler.DeleteTodoHandler).Methods(http.MethodDelete)
+
+	return router
+}
+
+func healthHandler(repo ports.PostgreRepo) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if err := repo.Ping(); err != nil {
+			http.Error(w, "Database connection error", http.StatusInternalServerError)
+			return
 		}
-	})
-
-	return mux
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte("OK"))
+	}
 }

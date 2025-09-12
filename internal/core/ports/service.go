@@ -12,4 +12,7 @@ type ToDoService interface {
 	GetTodoById(ctx context.Context, id string) (domain.ToDo, error)
 	UpdateTodo(ctx context.Context, todo domain.ToDo) error
 	DeleteTodo(ctx context.Context, id string) error
+	GetTodosByStatus(ctx context.Context, status string) ([]domain.ToDo, error)
+	CompleteTodoById(ctx context.Context, id string) error
+	GetTodoByPeriod(ctx context.Context, start string, end string) ([]domain.ToDo, error)
 }

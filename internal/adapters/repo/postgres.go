@@ -167,3 +167,90 @@ func (r *PostgreRepo) CreateTodo(ctx context.Context, todo domain.ToDo) (domain.
 
 	return todo, nil
 }
+
+func (r *PostgreRepo) GetTodosByStatus(ctx context.Context, status string) ([]domain.ToDo, error) {
+	query := `SELECT id, todo, message, created_at, updated_at, deadline, system_message, completed_at, complete 
+	          FROM todo WHERE complete = $1`
+	rows, err := r.db.QueryContext(ctx, query, status)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var todos []domain.ToDo
+	for rows.Next() {
+		var todo domain.ToDo
+		err := rows.Scan(
+			&todo.Id,
+			&todo.Todo,
+			&todo.Message,
+			&todo.CreatedAt,
+			&todo.UpdatedAt,
+			&todo.Deadline,
+			&todo.SystemMessage,
+			&todo.CompletedAt,
+			&todo.Complete,
+		)
+		if err != nil {
+			return nil, err
+		}
+		todos = append(todos, todo)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return todos, nil
+}
+func (r *PostgreRepo) CompleteTodoById(ctx context.Context, id string) error {
+	query := `UPDATE todo SET complete = true, completed_at = $1 WHERE id = $2`
+	completedAt := time.Now()
+	result, err := r.db.ExecContext(ctx, query, completedAt, id)
+	if err != nil {
+		return err
+	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+
+	if rowsAffected == 0 {
+		return fmt.Errorf("todo with id %s not found", id)
+	}
+	return nil
+}
+func (r *PostgreRepo) GetTodoByPeriod(ctx context.Context, start string, end string) ([]domain.ToDo, error) {
+	query := `SELECT id, todo, message, created_at, updated_at, deadline, system_message, completed_at, complete 
+	          FROM todo WHERE created_at BETWEEN $1 AND $2`
+	rows, err := r.db.QueryContext(ctx, query, start, end)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var todos []domain.ToDo
+	for rows.Next() {
+		var todo domain.ToDo
+		err := rows.Scan(
+			&todo.Id,
+			&todo.Todo,
+			&todo.Message,
+			&todo.CreatedAt,
+			&todo.UpdatedAt,
+			&todo.Deadline,
+			&todo.SystemMessage,
+			&todo.CompletedAt,
+			&todo.Complete,
+		)
+		if err != nil {
+			return nil, err
+		}
+		todos = append(todos, todo)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return todos, nil
+}
+func (r *PostgreRepo) Ping() error {
+	return r.db.Ping()
+}

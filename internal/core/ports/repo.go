@@ -12,4 +12,8 @@ type PostgreRepo interface {
 	DeleteTodoById(ctx context.Context, id string) error
 	UpdateTodo(ctx context.Context, todo domain.ToDo) error
 	CreateTodo(ctx context.Context, todo domain.ToDo) (domain.ToDo, error)
+	GetTodosByStatus(ctx context.Context, status string) ([]domain.ToDo, error)
+	CompleteTodoById(ctx context.Context, id string) error
+	GetTodoByPeriod(ctx context.Context, start string, end string) ([]domain.ToDo, error)
+	Ping() error
 }
