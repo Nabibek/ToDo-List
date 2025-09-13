@@ -6,7 +6,7 @@ CREATE TABLE IF NOT EXISTS todo (
     created_at TIMESTAMP NOT NULL,
     updated_at TIMESTAMP NOT NULL,
     deadline TIMESTAMP NOT NULL,
-    system_message TEXT,
+    priority TEXT,
     completed_at TIMESTAMP,
     complete BOOLEAN NOT NULL
 );
