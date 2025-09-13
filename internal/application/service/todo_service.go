@@ -6,8 +6,6 @@ import (
 
 	"ToDo-List/internal/core/domain"
 	"ToDo-List/internal/core/ports"
-
-	"github.com/google/uuid"
 )
 
 type TodoService struct {
@@ -19,15 +17,12 @@ func NewToDoService(repo ports.PostgreRepo) ports.ToDoService {
 }
 
 func (s *TodoService) CreateTodo(ctx context.Context, todo domain.ToDo) (domain.ToDo, error) {
-	todo.Id = uuid.NewString()
-	todo.CreatedAt = time.Now()
-	todo.UpdatedAt = time.Now()
 
 	return s.repo.CreateTodo(ctx, todo)
 }
 
-func (s *TodoService) GetAllTodos(ctx context.Context) ([]domain.ToDo, error) {
-	return s.repo.GetAllTodos(ctx)
+func (s *TodoService) GetAllTodosWithFilters(ctx context.Context, order string, complete *bool) ([]domain.ToDo, error) {
+	return s.repo.GetAllTodosWithFilters(ctx, order, complete)
 }
 
 func (s *TodoService) GetTodoById(ctx context.Context, id string) (domain.ToDo, error) {
@@ -43,17 +38,18 @@ func (s *TodoService) DeleteTodo(ctx context.Context, id string) error {
 	return s.repo.DeleteTodoById(ctx, id)
 }
 
-func (s *TodoService) GetTodosByStatus(ctx context.Context, status string) ([]domain.ToDo, error) {
-	return s.repo.GetTodosByStatus(ctx, status)
-}
 func (s *TodoService) CompleteTodoById(ctx context.Context, id string) error {
 	return s.repo.CompleteTodoById(ctx, id)
 }
-func (s *TodoService) GetTodoByPeriod(ctx context.Context, start string, end string) ([]domain.ToDo, error) {
-	return s.repo.GetTodoByPeriod(ctx, start, end)
-}
 
-func (s *TodoService) GetTodosWithFilter(ctx context.Context, filters map[string]string) ([]domain.ToDo, error) {
+// func (s *TodoService) GetTodosByStatus(ctx context.Context, status string) ([]domain.ToDo, error) {
 
-	return s.repo.GetTodosWithFilter(ctx, filters)
-}
+// 	return s.repo.GetTodosByStatus(ctx, status)
+// }
+// func (s *TodoService) GetTodoByPeriod(ctx context.Context, start string, end string) ([]domain.ToDo, error) {
+// 	return s.repo.GetTodoByPeriod(ctx, start, end)
+// }
+// func (s *TodoService) GetTodosOrderBy(ctx context.Context, order string) ([]domain.ToDo, error) {
+
+// 	return s.repo.GetTodosOrderBy(ctx, order)
+// }

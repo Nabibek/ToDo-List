@@ -24,11 +24,6 @@ func NewRouter(repo ports.PostgreRepo) *mux.Router {
 
 	// Health check
 	router.HandleFunc("/health", healthHandler(repo)).Methods(http.MethodGet)
-	// GET /todos/status
-	router.HandleFunc("/todos/status", todoHandler.GetTodosByStatusHandler).Methods(http.MethodGet)
-
-	// GET /todos/period
-	router.HandleFunc("/todos/period", todoHandler.GetTodosByPeriodHandler).Methods(http.MethodGet)
 
 	// POST /todo/complete/{id}
 	router.HandleFunc("/todo/complete/{id}", todoHandler.CompleteTodoByIdHandler).Methods(http.MethodPost)
@@ -39,7 +34,10 @@ func NewRouter(repo ports.PostgreRepo) *mux.Router {
 	router.HandleFunc("/todo/{id}", todoHandler.UpdateTodoByIdHandler).Methods(http.MethodPut)
 	// DELETE /todo/{id}
 	router.HandleFunc("/todo/{id}", todoHandler.DeleteTodoHandler).Methods(http.MethodDelete)
-	router.HandleFunc("/todos/filter", todoHandler.GetTodosWithFilterHandler).Methods(http.MethodGet)
+
+	// router.HandleFunc("/todos/order", todoHandler.GetTodosOrderByHandler).Methods(http.MethodGet)
+	// router.HandleFunc("/todos/period", todoHandler.GetTodosByPeriodHandler).Methods(http.MethodGet)
+	// router.HandleFunc("/todos/status", todoHandler.GetTodosByStatusHandler).Methods(http.MethodGet)
 
 	return router
 }
