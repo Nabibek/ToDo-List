@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>ToDo List</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 20px; }
+    h1 { text-align: center; }
+    .todo-form { margin-bottom: 20px; }
+    input, textarea, select { padding: 5px; margin: 5px; }
+    button { padding: 5px 10px; }
+    .completed { text-decoration: line-through; color: gray; }
+    .todo-item { border-bottom: 1px solid #ddd; padding: 10px 0; }
+    .controls button { margin-left: 5px; }
+  </style>
+</head>
+<body>
+  <h1>ToDo List</h1>
+
+  <!-- форма добавления -->
+  <div class="todo-form">
+    <input type="text" id="todo" placeholder="Название задачи" required>
+    <textarea id="message" placeholder="Описание" required></textarea>
+    <select id="priority">
+      <option value="low">Низкий</option>
+      <option value="medium" selected>Средний</option>
+      <option value="high">Высокий</option>
+    </select>
+    <button onclick="addTodo()">Добавить</button>
+  </div>
+
+  <!-- фильтры -->
+  <div class="filters">
+    <select id="statusFilter" onchange="loadTodos()">
+      <option value="">Все</option>
+      <option value="complete">Выполненные</option>
+      <option value="incomplete">Невыполненные</option>
+    </select>
+    <select id="orderFilter" onchange="loadTodos()">
+      <option value="asc">По дате ↑</option>
+      <option value="desc">По дате ↓</option>
+    </select>
+  </div>
+
+  <!-- список -->
+  <div id="todoList"></div>
+
+  <script src="main.js"></script>
+</body>
+</html>
