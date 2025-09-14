@@ -1,59 +1,73 @@
 package main
 
 import (
-	"context"
-	"log"
+	"database/sql"
+	"net/http"
+	"os"
+	"time"
 
-	"todo-desktop/backend/repo"
-	"todo-desktop/backend/services"
+	httpadapter "ToDo-List/internal/adapters/http"
+	"ToDo-List/internal/adapters/logger"
+	"ToDo-List/internal/repo"
 
-	"github.com/wailsapp/wails/v2/pkg/runtime"
+	_ "github.com/lib/pq"
 )
 
-type App struct {
-	ctx    context.Context
-	logger *log.Logger
-	todoService *services.TodoService
-}
+func main() {
+	// Инициализация логгера
+	loggerConfig := logger.Config{
+		Level: logger.ParseLevel(os.Getenv("LOG_LEVEL")),
+	}
+	appLogger := logger.New(loggerConfig)
 
-func NewApp() *App {
-	return &App{
-		logger: log.New(log.Writer(), "TODO ", log.LstdFlags),
+	appLogger.Info("Starting ToDo application...")
+
+	databaseURL := os.Getenv("DATABASE_URL")
+	if databaseURL == "" {
+		appLogger.Fatal("DATABASE_URL environment variable is not set")
+	}
+
+	db := waitForDatabase(databaseURL, appLogger)
+	defer db.Close()
+
+	appLogger.Info("Successfully connected to the database!")
+
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = "8000"
+		appLogger.Info("Using default port: %s", port)
+	}
+
+	todoRepo := repo.NewPostgreRepo(db, appLogger)
+	router := httpadapter.NewRouter(todoRepo, appLogger)
+
+	appLogger.Info("Starting server on port %s...", port)
+	err := http.ListenAndServe(":"+port, router)
+	if err != nil {
+		appLogger.Fatal("Server failed: %v", err)
 	}
 }
 
-// Startup - вызывается при запуске приложения
-func (a *App) Startup(ctx context.Context) {
-	a.ctx = ctx
-	
-	// Инициализация репозитория (SQLite для desktop)
-	dbRepo := repo.NewSQLiteRepo() 
-	a.todoService = services.NewTodoService(dbRepo, a.logger)
-	
-	a.logger.Println("Application started")
-}
+func waitForDatabase(databaseURL string, appLogger *logger.Logger) *sql.DB {
+	var db *sql.DB
+	var err error
 
-// Methods exposed to frontend
-func (a *App) GetTodos() ([]models.Todo, error) {
-	return a.todoService.GetAllTodos(a.ctx)
-}
-
-func (a *App) CreateTodo(todo models.Todo) error {
-	return a.todoService.CreateTodo(a.ctx, todo)
-}
-
-func (a *App) UpdateTodo(todo models.Todo) error {
-	return a.todoService.UpdateTodo(a.ctx, todo)
-}
-
-func (a *App) DeleteTodo(id string) error {
-	return a.todoService.DeleteTodo(a.ctx, id)
-}
-
-// Desktop-specific functionality
-func (a *App) ShowNotification(title, message string) {
-	runtime.Notification(a.ctx, &runtime.NotificationOptions{
-		Title:   title,
-		Message: message,
-	})
+	for i := 0; i < 10; i++ {
+		db, err = sql.Open("postgres", databaseURL)
+		if err != nil {
+			appLogger.Warn("Failed to connect to DB (attempt %d): %v", i+1, err)
+			time.Sleep(5 * time.Second)
+			continue
+		}
+		err = db.Ping()
+		if err != nil {
+			appLogger.Warn("Failed to ping DB (attempt %d): %v", i+1, err)
+			time.Sleep(5 * time.Second)
+			continue
+		}
+		appLogger.Info("Successfully connected to the database!")
+		return db
+	}
+	appLogger.Fatal("Could not connect to the database after multiple attempts: %v", err)
+	return nil
 }
