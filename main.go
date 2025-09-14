@@ -1,64 +1,59 @@
 package main
 
 import (
-	"database/sql"
-	"fmt"
+	"context"
 	"log"
-	"net/http"
-	"os"
-	"time"
 
-	httpadapter "ToDo-List/internal/adapters/http"
-	"ToDo-List/internal/adapters/repo"
+	"todo-desktop/backend/repo"
+	"todo-desktop/backend/services"
 
-	_ "github.com/lib/pq"
+	"github.com/wailsapp/wails/v2/pkg/runtime"
 )
 
-func main() {
-	databaseURL := os.Getenv("DATABASE_URL")
-	if databaseURL == "" {
-		log.Fatal("DATABASE_URL environment variable is not set")
-	}
+type App struct {
+	ctx    context.Context
+	logger *log.Logger
+	todoService *services.TodoService
+}
 
-	db := waitForDatabase(databaseURL)
-	defer db.Close()
-
-	fmt.Println("Successfully connected to the database!")
-
-	port := os.Getenv("PORT")
-	if port == "" {
-		port = "8000"
-	}
-
-	todoRepo := repo.NewPostgreRepo(db)
-	router := httpadapter.NewRouter(todoRepo)
-
-	fmt.Printf("Starting server at :%s...\n", port)
-	err := http.ListenAndServe(":"+port, router)
-	if err != nil {
-		log.Fatalf("Server failed: %v", err)
+func NewApp() *App {
+	return &App{
+		logger: log.New(log.Writer(), "TODO ", log.LstdFlags),
 	}
 }
 
-func waitForDatabase(databaseURL string) *sql.DB {
-	var db *sql.DB
-	var err error
-	for i := 0; i < 10; i++ {
-		db, err = sql.Open("postgres", databaseURL)
-		if err != nil {
-			log.Printf("Failed to connect to DB (attempt %d): %v", i+1, err)
-			time.Sleep(5 * time.Second)
-			continue
-		}
-		err = db.Ping()
-		if err != nil {
-			log.Printf("Failed to ping DB (attempt %d): %v", i+1, err)
-			time.Sleep(5 * time.Second)
-			continue
-		}
-		log.Println("Successfully connected to the database!")
-		return db
-	}
-	log.Fatalf("Could not connect to the database after multiple attempts: %v", err)
-	return nil
+// Startup - вызывается при запуске приложения
+func (a *App) Startup(ctx context.Context) {
+	a.ctx = ctx
+	
+	// Инициализация репозитория (SQLite для desktop)
+	dbRepo := repo.NewSQLiteRepo() 
+	a.todoService = services.NewTodoService(dbRepo, a.logger)
+	
+	a.logger.Println("Application started")
+}
+
+// Methods exposed to frontend
+func (a *App) GetTodos() ([]models.Todo, error) {
+	return a.todoService.GetAllTodos(a.ctx)
+}
+
+func (a *App) CreateTodo(todo models.Todo) error {
+	return a.todoService.CreateTodo(a.ctx, todo)
+}
+
+func (a *App) UpdateTodo(todo models.Todo) error {
+	return a.todoService.UpdateTodo(a.ctx, todo)
+}
+
+func (a *App) DeleteTodo(id string) error {
+	return a.todoService.DeleteTodo(a.ctx, id)
+}
+
+// Desktop-specific functionality
+func (a *App) ShowNotification(title, message string) {
+	runtime.Notification(a.ctx, &runtime.NotificationOptions{
+		Title:   title,
+		Message: message,
+	})
 }

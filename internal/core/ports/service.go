@@ -7,13 +7,10 @@ import (
 )
 
 type ToDoService interface {
-	GetAllTodosWithFilters(ctx context.Context, order string, complete *bool) ([]domain.ToDo, error)
 	CreateTodo(ctx context.Context, todo domain.ToDo) (domain.ToDo, error)
 	GetTodoById(ctx context.Context, id string) (domain.ToDo, error)
 	UpdateTodo(ctx context.Context, todo domain.ToDo) error
 	DeleteTodo(ctx context.Context, id string) error
 	CompleteTodoById(ctx context.Context, id string) error
-	// GetTodosByStatus(ctx context.Context, status string) ([]domain.ToDo, error)
-	// GetTodoByPeriod(ctx context.Context, start string, end string) ([]domain.ToDo, error)
-	// GetTodosOrderBy(ctx context.Context, order string) ([]domain.ToDo, error)
+	GetAllTodosWithFilters(ctx context.Context, filter TodoFilter) ([]domain.ToDo, error)
 }

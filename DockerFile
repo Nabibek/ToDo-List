@@ -13,9 +13,7 @@ FROM alpine:latest
 
 WORKDIR /app
 
-# Копируем собранный бинарник
 COPY --from=builder /app/main .
-# Копируем папку со статическими файлами фронтенда
 COPY --from=builder /app/web ./web
 
 ENV PORT=8000

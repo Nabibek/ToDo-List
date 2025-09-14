@@ -3,53 +3,132 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>ToDo - Минимальный фронт</title>
+  <title>ToDo Desktop - Управление задачами</title>
   <link rel="stylesheet" href="styles.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body>
   <div class="container">
-    <h1>📋 ToDo — Минимальный интерфейс</h1>
+    <header class="header">
+      <h1>📋 ToDo Desktop</h1>
+      <button id="theme-toggle" class="btn-theme">
+        <i class="fas fa-moon"></i>
+      </button>
+    </header>
 
     <section class="card">
-      <h2>Добавить задачу</h2>
+      <h2><i class="fas fa-plus"></i> Добавить новую задачу</h2>
       <form id="todo-form">
-        <input id="input-todo" type="text" placeholder="Название задачи" required />
-        <input id="input-message" type="text" placeholder="Описание (опционально)" />
-        <label class="small">Дедлайн (опционально)
-          <input id="input-deadline" type="datetime-local" />
-        </label>
-        <button type="submit">Добавить</button>
+        <div class="form-group">
+          <input id="input-todo" type="text" placeholder="Название задачи*" required />
+        </div>
+        
+        <div class="form-group">
+          <textarea id="input-message" placeholder="Описание задачи (опционально)" rows="3"></textarea>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>Приоритет:</label>
+            <select id="input-priority">
+              <option value="low">🟢 Низкий</option>
+              <option value="medium" selected>🟡 Средний</option>
+              <option value="high">🔴 Высокий</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label>Дедлайн:</label>
+            <input id="input-deadline" type="datetime-local" />
+          </div>
+        </div>
+
+        <button type="submit" class="btn-primary">
+          <i class="fas fa-plus"></i> Добавить задачу
+        </button>
       </form>
     </section>
 
     <section class="card">
       <div class="controls">
-        <div>
-          <label>Статус:
-            <select id="filter-status">
-              <option value="">Все</option>
-              <option value="complete">Выполненные</option>
-              <option value="incomplete">Активные</option>
-            </select>
-          </label>
+        <div class="filters">
+          <div class="filter-group">
+            <label>Статус:
+              <select id="filter-status">
+                <option value="">Все задачи</option>
+                <option value="active">Активные</option>
+                <option value="completed">Выполненные</option>
+              </select>
+            </label>
+          </div>
 
-          <label>Сортировка:
-            <select id="filter-order">
-              <option value="desc">Сначала новые</option>
-              <option value="asc">Сначала старые</option>
-            </select>
-          </label>
+          <div class="filter-group">
+            <label>Сортировка:
+              <select id="filter-order">
+                <option value="desc">Сначала новые</option>
+                <option value="asc">Сначала старые</option>
+                <option value="priority">По приоритету</option>
+              </select>
+            </label>
+          </div>
+
+          <div class="filter-group">
+            <label>Период:
+              <select id="filter-period">
+                <option value="">Все время</option>
+                <option value="today">Сегодня</option>
+                <option value="week">На неделе</option>
+                <option value="overdue">Просроченные</option>
+              </select>
+            </label>
+          </div>
         </div>
 
-        <div>
-          <button id="btn-refresh">Обновить</button>
+        <div class="actions">
+          <button id="btn-refresh" class="btn-secondary">
+            <i class="fas fa-sync"></i> Обновить
+          </button>
         </div>
       </div>
 
-      <h2>Список задач</h2>
-      <ul id="todos-list" class="todos"></ul>
-      <div id="empty" class="muted">Задач нет</div>
+      <div class="tasks-header">
+        <h2>
+          <i class="fas fa-tasks"></i> 
+          <span id="tasks-count">Список задач</span>
+        </h2>
+        <div class="stats" id="tasks-stats"></div>
+      </div>
+
+      <div id="tasks-container">
+        <div class="tasks-section">
+          <h3>📋 Активные задачи</h3>
+          <ul id="todos-active" class="todos"></ul>
+        </div>
+
+        <div class="tasks-section">
+          <h3>✅ Выполненные задачи</h3>
+          <ul id="todos-completed" class="todos"></ul>
+        </div>
+      </div>
+
+      <div id="empty" class="muted">
+        <i class="fas fa-inbox"></i>
+        <p>Задач пока нет</p>
+        <small>Добавьте первую задачу чтобы начать</small>
+      </div>
     </section>
+  </div>
+
+  <!-- Модальное окно подтверждения удаления -->
+  <div id="delete-modal" class="modal">
+    <div class="modal-content">
+      <h3>Подтверждение удаления</h3>
+      <p>Вы уверены, что хотите удалить эту задачу?</p>
+      <div class="modal-actions">
+        <button id="modal-cancel" class="btn-secondary">Отмена</button>
+        <button id="modal-confirm" class="btn-danger">Удалить</button>
+      </div>
+    </div>
   </div>
 
   <script src="app.js"></script>

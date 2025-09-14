@@ -32,6 +32,7 @@ services:
     environment:
       - DATABASE_URL=postgres://postgres:postgres@db:5432/todos?sslmode=disable
       - PORT=8000
+      - LOG_LEVEL=DEBUG 
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
       interval: 10s
